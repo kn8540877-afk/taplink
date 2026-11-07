@@ -1,4 +1,4 @@
-﻿import { QRCodeSVG } from "qrcode.react";
+import { QRCodeSVG } from "qrcode.react";
 import { profile, socials } from "@/data/profile";
 import {
   Camera,
@@ -169,7 +169,7 @@ export default function Home() {
 
                 <div className="mx-auto mt-9 flex w-fit flex-col items-center rounded-2xl bg-white p-5">
                   <QRCodeSVG
-                    value="TAPLINK-PROFILE-DEMO"
+                    value="https://taplink-psi.vercel.app"
                     size={174}
                     level="H"
                     bgColor="#ffffff"
