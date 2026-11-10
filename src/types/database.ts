@@ -1,4 +1,4 @@
-export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[]
+﻿export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[]
 
 export type Database = {
   public: {
@@ -17,7 +17,7 @@ export type Database = {
       }
     }
     Views: Record<string, never>
-    Functions: Record<string, never>
+    Functions: { is_taplink_admin: { Args: Record<PropertyKey, never>; Returns: boolean }; taplink_admin_overview: { Args: Record<PropertyKey, never>; Returns: { total_users: number; total_profiles: number; published_profiles: number; draft_profiles: number }[] }; taplink_admin_users: { Args: Record<PropertyKey, never>; Returns: { user_id: string; email: string | null; created_at: string; profile_count: number }[] }; taplink_admin_profiles: { Args: Record<PropertyKey, never>; Returns: { profile_id: string; owner_email: string | null; profile_name: string; profile_type: string; slug: string; is_published: boolean; created_at: string }[] }; taplink_admin_set_profile_published: { Args: { target_profile_id: string; publish_status: boolean }; Returns: boolean }; taplink_admin_user_profiles: { Args: { target_user_id: string }; Returns: { profile_id: string; profile_name: string; profile_type: string; slug: string; is_published: boolean; created_at: string }[] } }
     Enums: Record<string, never>
     CompositeTypes: Record<string, never>
   }

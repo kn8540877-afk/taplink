@@ -1,5 +1,6 @@
-﻿"use client";
+"use client";
 
+import Image from "next/image";
 import { useRef, useState } from "react";
 import { createClient } from "@/utils/supabase/client";
 
@@ -80,11 +81,14 @@ export default function ProfilePhotoUpload({ value, onChange }: Props) {
       <div className="flex items-center gap-4">
         <div className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-full border border-[#d6b46a]/40 bg-black">
           {value ? (
-            <img
+            <Image
               src={value}
               alt="Profile preview"
               className="h-full w-full object-cover"
-            />
+            width={96}
+                  height={96}
+                  unoptimized
+                />
           ) : (
             <span className="text-xs text-gray-500">No Photo</span>
           )}

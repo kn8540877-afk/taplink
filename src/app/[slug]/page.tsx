@@ -1,3 +1,4 @@
+import Image from "next/image";
 import type { Metadata } from "next";
 import { connection } from "next/server";
 import { notFound } from "next/navigation";
@@ -16,6 +17,7 @@ type Props = {
 
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  await connection();
   const { slug } = await params;
   const supabase = await createClient();
 
@@ -178,10 +180,13 @@ export default async function PublicProfilePage({ params }: Props) {
 
             <div className="mb-8 flex items-center gap-5">
               {profile.photo_url ? (
-                <img
+                <Image
                   src={profile.photo_url}
                   alt={profile.name}
                   className="h-24 w-24 shrink-0 rounded-full border border-[#d6b46a]/50 object-cover"
+                width={96}
+                  height={96}
+                  unoptimized
                 />
               ) : (
                 <div className="flex h-24 w-24 shrink-0 items-center justify-center rounded-full border border-[#d6b46a]/50 bg-gradient-to-br from-[#292319] to-black text-3xl text-[#d6b46a]">

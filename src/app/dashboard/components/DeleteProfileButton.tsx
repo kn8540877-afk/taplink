@@ -52,7 +52,7 @@ export default function DeleteProfileButton({ profileId, profileName }: Props) {
 
 
       if (filePath && filePath.startsWith(`${user.id}/`)) {
-        const { data: removeData, error: storageError } = await supabase.storage
+        const { error: storageError } = await supabase.storage
           .from("profile-photos")
           .remove([filePath]);
 
