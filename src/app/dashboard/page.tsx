@@ -5,11 +5,19 @@ import { createClient } from "@/utils/supabase/server";
 import PublishToggle from "./components/PublishToggle";
 import ProfileActions from "./components/ProfileActions";
 import DeleteProfileButton from "./components/DeleteProfileButton";
+import AnalyticsSummary from "./components/AnalyticsSummary";
+import AnalyticsChart from "./components/AnalyticsChart";
 
 export const instant = false;
 
-export default async function DashboardPage() {
+export default async function DashboardPage({ searchParams }: { searchParams: Promise<{ period?: string }> }) {
   await connection();
+  const params = await searchParams;
+  const period = ["today", "7d", "30d"].includes(params.period ?? "") ? params.period! : "30d";
+  const now = new Date();
+  const startDate = new Date(now);
+  if (period === "today") startDate.setHours(0, 0, 0, 0);
+  else startDate.setDate(startDate.getDate() - (period === "7d" ? 7 : 30));
   const supabase = await createClient();
 
   const {
@@ -27,6 +35,32 @@ export default async function DashboardPage() {
     .eq("owner_id", user.id)
     .order("created_at", { ascending: false });
 
+  const { data: analytics, error: analyticsError } = (profiles?.length ?? 0) > 0
+    ? await supabase
+        .from("profile_analytics")
+        .select("event_type, created_at")
+        .gte("created_at", startDate.toISOString())
+        .in("profile_id", (profiles ?? []).map((profile) => profile.id))
+    : { data: [], error: null };
+  const chartMap = new Map<string, { date: string; profileViews: number; qrScans: number; contactClicks: number; socialClicks: number }>();
+  for (const event of analytics ?? []) {
+    const date = new Date(event.created_at).toLocaleDateString("en-CA");
+    const row = chartMap.get(date) ?? { date, profileViews: 0, qrScans: 0, contactClicks: 0, socialClicks: 0 };
+    if (event.event_type === "profile_view") row.profileViews++;
+    if (event.event_type === "qr_scan") row.qrScans++;
+    if (event.event_type === "contact_click") row.contactClicks++;
+    if (event.event_type === "social_click") row.socialClicks++;
+    chartMap.set(date, row);
+  }
+  const chartData = Array.from(chartMap.values()).sort((a, b) => a.date.localeCompare(b.date));
+
+  const eventCounts = (analytics ?? []).reduce(
+    (counts, event) => {
+      counts[event.event_type] = (counts[event.event_type] ?? 0) + 1;
+      return counts;
+    },
+    {} as Record<string, number>
+  );
   const totalProfiles = profiles?.length ?? 0;
   const publishedProfiles =
     profiles?.filter((profile) => profile.is_published).length ?? 0;
@@ -61,6 +95,20 @@ export default async function DashboardPage() {
             Signed in as {user.email}
           </p>
         </section>
+
+        {analyticsError ? (
+          <p role="alert" className="mt-8 rounded-xl border border-red-500/20 bg-red-500/10 p-5 text-sm text-red-400">Unable to load analytics. Please try again.</p>
+        ) : (
+        <AnalyticsSummary
+          profileViews={eventCounts.profile_view ?? 0}
+          qrScans={eventCounts.qr_scan ?? 0}
+          contactClicks={eventCounts.contact_click ?? 0}
+          socialClicks={eventCounts.social_click ?? 0}
+          period={period}
+        />
+        )}
+
+        {!analyticsError && <AnalyticsChart data={chartData} />}
 
         <section className="grid gap-5 sm:grid-cols-2">
           <div className="rounded-2xl border border-[#d6b46a]/20 bg-[#111111] p-6">
@@ -151,6 +199,13 @@ export default async function DashboardPage() {
     </main>
   );
 }
+
+
+
+
+
+
+
 
 
 
