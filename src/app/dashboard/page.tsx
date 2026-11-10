@@ -29,6 +29,8 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
     redirect("/login");
   }
 
+  const { data: isAdmin } = await supabase.rpc("is_taplink_admin");
+
   const { data: profiles, error: profilesError } = await supabase
     .from("profiles")
     .select("id, name, slug, profile_type, is_published")
@@ -76,14 +78,24 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
             TAPLINK
           </Link>
 
-          <form action="/auth/signout" method="post">
+          <div className="flex items-center gap-3">
+            {isAdmin === true && (
+              <Link
+                href="/admin"
+                className="rounded-lg border border-[#d6b46a]/50 px-4 py-2 text-sm font-medium text-[#d6b46a] transition hover:bg-[#d6b46a] hover:text-black"
+              >
+                Admin Dashboard
+              </Link>
+            )}
+            <form action="/auth/signout" method="post">
             <button
               type="submit"
               className="rounded-lg border border-white/15 px-4 py-2 text-sm text-gray-300 transition hover:border-[#d6b46a] hover:text-[#d6b46a]"
             >
               Sign Out
             </button>
-          </form>
+            </form>
+          </div>
         </header>
 
         <section className="py-10">
@@ -199,6 +211,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
     </main>
   );
 }
+
 
 
 

@@ -1,15 +1,25 @@
-import { redirect } from "next/navigation";
+﻿import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import Link from "next/link";
 import { createClient } from "@/utils/supabase/server";
 import AdminSidebar from "./components/AdminSidebar";
 import AdminProfileTable from "./components/AdminProfileTable";
 import AdminUserTable from "./components/AdminUserTable";
+import AdminAnalyticsSummary from "./components/AdminAnalyticsSummary";
 
 export const instant = false;
 
-export default async function AdminPage() {
+export default async function AdminPage({ searchParams }: { searchParams: Promise<{ period?: string }> }) {
   await connection();
+
+  const params = await searchParams;
+  const period = ["7d", "30d", "90d"].includes(params.period ?? "")
+    ? params.period!
+    : "30d";
+
+  const endDate = new Date();
+  const startDate = new Date(endDate);
+  startDate.setDate(startDate.getDate() - Number.parseInt(period, 10));
 
   const supabase = await createClient();
 
@@ -30,10 +40,12 @@ export default async function AdminPage() {
     { data: overview, error: overviewError },
     { data: users, error: usersError },
     { data: profiles, error: profilesError },
+    { data: analytics, error: analyticsError },
   ] = await Promise.all([
     supabase.rpc("taplink_admin_overview"),
     supabase.rpc("taplink_admin_users"),
     supabase.rpc("taplink_admin_profiles"),
+    supabase.rpc("taplink_admin_analytics", { p_start_date: startDate.toISOString(), p_end_date: endDate.toISOString() }),
   ]);
 
   const stats = overview?.[0];
@@ -229,6 +241,8 @@ export default async function AdminPage() {
               )}
             </section>
 
+            <AdminAnalyticsSummary data={analyticsError ? null : analytics?.[0] ?? null} period={period} />
+
             {usersError ? (
               <section id="users" className="mt-12 scroll-mt-28">
                 <p role="alert" className="rounded-xl border border-red-500/20 bg-red-500/10 p-5 text-sm text-red-300">
@@ -259,3 +273,4 @@ export default async function AdminPage() {
     </main>
   );
 }
+
