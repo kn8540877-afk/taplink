@@ -8,6 +8,7 @@ import {
   Contact, ShieldCheck, Wifi, ArrowUpRight, Zap, Globe,
 } from "lucide-react";
 import { createClient } from "@/utils/supabase/server";
+import AnalyticsTracker from "./AnalyticsTracker";
 
 export const instant = false;
 
@@ -83,6 +84,7 @@ export default async function PublicProfilePage({ params }: Props) {
     .order("sort_order", { ascending: true });
 
   const publicUrl = `https://taplink-psi.vercel.app/${profile.slug}`;
+  const qrUrl = `${publicUrl}?source=qr`;
   const initials = profile.name
     .split(" ")
     .filter(Boolean)
@@ -153,6 +155,7 @@ export default async function PublicProfilePage({ params }: Props) {
 
   return (
     <main className="min-h-screen bg-[#080808] text-white selection:bg-[#d6b46a] selection:text-black">
+      <AnalyticsTracker slug={profile.slug} />
       <div className="mx-auto max-w-6xl px-5 py-8 sm:px-8">
         <header className="flex items-center justify-between border-b border-white/10 pb-6">
           <div>
@@ -212,7 +215,7 @@ export default async function PublicProfilePage({ params }: Props) {
 
             <div className="mt-8 space-y-4">
               {profile.phone && (
-                <a href={`tel:${profile.phone}`} className="flex items-center gap-4 rounded-xl border border-white/10 bg-white/[0.03] p-4 transition hover:border-[#d6b46a]/50">
+                <a href={`tel:${profile.phone}`} data-analytics-event="contact_click" data-analytics-target="phone" className="flex items-center gap-4 rounded-xl border border-white/10 bg-white/[0.03] p-4 transition hover:border-[#d6b46a]/50">
                   <Phone className="text-[#d6b46a]" size={19} />
                   <div className="flex-1">
                     <p className="text-[10px] text-zinc-500">PHONE NUMBER</p>
@@ -223,7 +226,7 @@ export default async function PublicProfilePage({ params }: Props) {
               )}
 
               {profile.alternate_phone && (
-                <a href={`tel:${profile.alternate_phone}`} className="flex items-center gap-4 rounded-xl border border-white/10 bg-white/[0.03] p-4 transition hover:border-[#d6b46a]/50">
+                <a href={`tel:${profile.alternate_phone}`} data-analytics-event="contact_click" data-analytics-target="alternate_phone" className="flex items-center gap-4 rounded-xl border border-white/10 bg-white/[0.03] p-4 transition hover:border-[#d6b46a]/50">
                   <Phone className="text-[#d6b46a]" size={19} />
                   <div className="flex-1">
                     <p className="text-[10px] text-zinc-500">ALTERNATE PHONE</p>
@@ -234,7 +237,7 @@ export default async function PublicProfilePage({ params }: Props) {
               )}
 
               {profile.email && (
-                <a href={`mailto:${profile.email}`} className="flex items-center gap-4 rounded-xl border border-white/10 bg-white/[0.03] p-4 transition hover:border-[#d6b46a]/50">
+                <a href={`mailto:${profile.email}`} data-analytics-event="contact_click" data-analytics-target="email" className="flex items-center gap-4 rounded-xl border border-white/10 bg-white/[0.03] p-4 transition hover:border-[#d6b46a]/50">
                   <Mail className="text-[#d6b46a]" size={19} />
                   <div className="flex-1">
                     <p className="text-[10px] text-zinc-500">EMAIL ADDRESS</p>
@@ -255,7 +258,7 @@ export default async function PublicProfilePage({ params }: Props) {
               )}
 
               {profile.website && (
-                <a href={profile.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-4 rounded-xl border border-white/10 bg-white/[0.03] p-4 transition hover:border-[#d6b46a]/50">
+                <a href={profile.website} data-analytics-event="contact_click" data-analytics-target="website" target="_blank" rel="noopener noreferrer" className="flex items-center gap-4 rounded-xl border border-white/10 bg-white/[0.03] p-4 transition hover:border-[#d6b46a]/50">
                   <Globe className="text-[#d6b46a]" size={19} />
                   <div className="flex-1">
                     <p className="text-[10px] text-zinc-500">WEBSITE</p>
@@ -277,7 +280,7 @@ export default async function PublicProfilePage({ params }: Props) {
                     return (
                       <a
                         key={social.id}
-                        href={social.url}
+                        href={social.url} data-analytics-event="social_click" data-analytics-target={social.platform}
                         target="_blank"
                         rel="noopener noreferrer"
                         aria-label={social.platform}
@@ -294,7 +297,7 @@ export default async function PublicProfilePage({ params }: Props) {
 
             <div className="mt-9 flex flex-wrap gap-3">
               {profile.phone && (
-                <a href={`tel:${profile.phone}`} className="flex items-center gap-2 rounded-full bg-[#d6b46a] px-6 py-3 text-xs font-bold text-black transition hover:bg-[#ebcd87]">
+                <a href={`tel:${profile.phone}`} data-analytics-event="contact_click" data-analytics-target="phone" className="flex items-center gap-2 rounded-full bg-[#d6b46a] px-6 py-3 text-xs font-bold text-black transition hover:bg-[#ebcd87]">
                   <Phone size={15} />
                   CONTACT ME
                 </a>
@@ -308,7 +311,7 @@ export default async function PublicProfilePage({ params }: Props) {
                 SAVE CONTACT
               </a>
               {profile.email && (
-                <a href={`mailto:${profile.email}`} className="flex items-center gap-2 rounded-full border border-white/15 px-6 py-3 text-xs transition hover:border-[#d6b46a]">
+                <a href={`mailto:${profile.email}`} data-analytics-event="contact_click" data-analytics-target="email" className="flex items-center gap-2 rounded-full border border-white/15 px-6 py-3 text-xs transition hover:border-[#d6b46a]">
                   <Mail size={15} />
                   SEND EMAIL
                 </a>
@@ -336,7 +339,7 @@ export default async function PublicProfilePage({ params }: Props) {
                 </div>
 
                 <div className="mx-auto mt-9 flex w-fit flex-col items-center rounded-2xl bg-white p-5">
-                  <QRCodeSVG value={publicUrl} size={174} level="H" bgColor="#ffffff" fgColor="#111111" />
+                  <QRCodeSVG value={qrUrl} size={174} level="H" bgColor="#ffffff" fgColor="#111111" />
                   <p className="mt-3 text-[9px] font-bold tracking-[0.2em] text-black">
                     SCAN TO CONNECT
                   </p>
