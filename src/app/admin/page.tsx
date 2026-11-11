@@ -6,6 +6,8 @@ import AdminSidebar from "./components/AdminSidebar";
 import AdminProfileTable from "./components/AdminProfileTable";
 import AdminUserTable from "./components/AdminUserTable";
 import AdminAnalyticsSummary from "./components/AdminAnalyticsSummary";
+import AdminAnalyticsChart from "./components/AdminAnalyticsChart";
+import AdminTopProfiles from "./components/AdminTopProfiles";
 
 export const instant = false;
 
@@ -41,11 +43,15 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
     { data: users, error: usersError },
     { data: profiles, error: profilesError },
     { data: analytics, error: analyticsError },
+    { data: dailyTrends, error: dailyTrendsError },
+    { data: topProfiles, error: topProfilesError },
   ] = await Promise.all([
     supabase.rpc("taplink_admin_overview"),
     supabase.rpc("taplink_admin_users"),
     supabase.rpc("taplink_admin_profiles"),
     supabase.rpc("taplink_admin_analytics", { p_start_date: startDate.toISOString(), p_end_date: endDate.toISOString() }),
+    supabase.rpc("taplink_admin_daily_trends", { p_start_date: startDate.toISOString(), p_end_date: endDate.toISOString() }),
+    supabase.rpc("taplink_admin_top_profiles", { p_start_date: startDate.toISOString(), p_end_date: endDate.toISOString(), p_limit: 10 }),
   ]);
 
   const stats = overview?.[0];
@@ -243,6 +249,26 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
 
             <AdminAnalyticsSummary data={analyticsError ? null : analytics?.[0] ?? null} period={period} />
 
+            {dailyTrendsError ? (
+              <p role="alert" className="mt-6 rounded-xl border border-red-500/20 bg-red-500/10 p-5 text-sm text-red-300">
+                Unable to load daily analytics trends. Please try again.
+              </p>
+            ) : (
+              <div className="mt-6">
+                <AdminAnalyticsChart data={dailyTrends ?? []} />
+              </div>
+            )}
+
+            {topProfilesError ? (
+              <p role="alert" className="mt-6 rounded-xl border border-red-500/20 bg-red-500/10 p-5 text-sm text-red-300">
+                Unable to load top profile analytics. Please try again.
+              </p>
+            ) : (
+              <div className="mt-6">
+                <AdminTopProfiles data={topProfiles ?? []} />
+              </div>
+            )}
+
             {usersError ? (
               <section id="users" className="mt-12 scroll-mt-28">
                 <p role="alert" className="rounded-xl border border-red-500/20 bg-red-500/10 p-5 text-sm text-red-300">
@@ -273,4 +299,8 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
     </main>
   );
 }
+
+
+
+
 
