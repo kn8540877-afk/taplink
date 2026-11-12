@@ -1,4 +1,4 @@
-﻿import { redirect } from "next/navigation";
+import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import Link from "next/link";
 import { createClient } from "@/utils/supabase/server";
@@ -37,6 +37,28 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
     .eq("owner_id", user.id)
     .order("created_at", { ascending: false });
 
+  const { data: subscription } = await supabase
+    .from("user_subscriptions")
+    .select("plan_id, status, expires_at")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  const { data: subscriptionPlan } = subscription
+    ? await supabase
+        .from("subscription_plans")
+        .select("name, slug, profile_limit")
+        .eq("id", subscription.plan_id)
+        .maybeSingle()
+    : { data: null };
+
+  const subscriptionIsActive =
+    subscription?.status === "active" &&
+    (!subscription.expires_at ||
+      new Date(subscription.expires_at).getTime() > Date.now());
+
+  const currentPlan = subscriptionIsActive && subscriptionPlan
+    ? subscriptionPlan
+    : { name: "Free", slug: "free", profile_limit: 1 };
   const { data: analytics, error: analyticsError } = (profiles?.length ?? 0) > 0
     ? await supabase
         .from("profile_analytics")
@@ -122,6 +144,44 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
 
         {!analyticsError && <AnalyticsChart data={chartData} />}
 
+        <section className="mt-8 rounded-2xl border border-[#d6b46a]/30 bg-gradient-to-br from-[#17140e] to-[#111111] p-6">
+          <div className="flex flex-wrap items-start justify-between gap-5">
+            <div>
+              <p className="text-sm tracking-widest text-[#d6b46a]">MY SUBSCRIPTION</p>
+              <h2 className="mt-3 text-2xl font-semibold">{currentPlan.name} Plan</h2>
+              <p className="mt-2 text-sm text-gray-400">
+                {totalProfiles} profile{totalProfiles === 1 ? "" : "s"} used
+                {" / "}
+                {currentPlan.profile_limit === null ? "Unlimited" : currentPlan.profile_limit}
+              </p>
+            </div>
+            <div className="rounded-xl border border-[#d6b46a]/20 bg-black/30 px-5 py-3 text-right">
+              <p className="text-xs text-gray-400">PROFILE USAGE</p>
+              <p className="mt-1 text-2xl font-semibold text-[#d6b46a]">
+                {currentPlan.profile_limit === null
+                  ? "∞"
+                  : `${totalProfiles} / ${currentPlan.profile_limit}`}
+              </p>
+            </div>
+          </div>
+          <div className="mt-5 h-2 overflow-hidden rounded-full bg-white/10">
+            <div
+              className="h-full rounded-full bg-[#d6b46a] transition-all"
+              style={{
+                width: currentPlan.profile_limit === null
+                  ? "0%"
+                  : `${Math.min(100, (totalProfiles / currentPlan.profile_limit) * 100)}%`,
+              }}
+            />
+          </div>
+          <p className="mt-3 text-xs text-gray-500">
+            {currentPlan.profile_limit === null
+              ? "Enjoy unlimited profiles with your Business plan."
+              : totalProfiles >= currentPlan.profile_limit
+                ? "You have reached your profile limit. Upgrade your plan to create more."
+                : `${currentPlan.profile_limit - totalProfiles} profile slot${currentPlan.profile_limit - totalProfiles === 1 ? "" : "s"} remaining.`}
+          </p>
+        </section>
         <section className="grid gap-5 sm:grid-cols-2">
           <div className="rounded-2xl border border-[#d6b46a]/20 bg-[#111111] p-6">
             <p className="text-sm text-gray-400">Total Profiles</p>
@@ -141,12 +201,22 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
         <section className="mt-10">
           <div className="mb-5 flex flex-wrap items-center justify-between gap-4">
             <h2 className="text-xl font-semibold">My Profiles</h2>
-            <Link
-              href="/dashboard/profiles/new"
-              className="rounded-lg bg-[#d6b46a] px-5 py-3 text-sm font-semibold text-black transition hover:bg-[#e5c782]"
-            >
-              + Create Profile
-            </Link>
+            {currentPlan.profile_limit !== null &&
+            totalProfiles >= currentPlan.profile_limit ? (
+              <span
+                aria-disabled="true"
+                className="cursor-not-allowed rounded-lg border border-white/15 bg-white/5 px-5 py-3 text-sm font-semibold text-gray-500"
+              >
+                Profile Limit Reached
+              </span>
+            ) : (
+              <Link
+                href="/dashboard/profiles/new"
+                className="rounded-lg bg-[#d6b46a] px-5 py-3 text-sm font-semibold text-black transition hover:bg-[#e5c782]"
+              >
+                + Create Profile
+              </Link>
+            )}
           </div>
 
           {profilesError ? (

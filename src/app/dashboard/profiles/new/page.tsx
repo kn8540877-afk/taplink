@@ -94,10 +94,13 @@ export default function NewProfilePage() {
 
     if (profileError || !profile) {
       setLoading(false);
+      const errorMessage = profileError?.message || "";
       setError(
         profileError?.code === "23505"
           ? "This username is already taken. Please choose another."
-          : profileError?.message || "Unable to create profile."
+          : errorMessage.includes("PROFILE_LIMIT_REACHED")
+            ? "Your current plan has reached its profile limit. Please upgrade your plan to create more profiles."
+            : errorMessage || "Unable to create profile."
       );
       return;
     }

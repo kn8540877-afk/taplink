@@ -19,9 +19,27 @@ type UserProfile = {
   created_at: string;
 };
 
+type UserSubscription = {
+  user_id: string;
+  plan_id: string;
+  status: string;
+  started_at: string;
+  expires_at: string | null;
+};
+
+type SubscriptionPlan = {
+  id: string;
+  slug: string;
+  name: string;
+  profile_limit: number | null;
+  price_monthly: number;
+};
+
 type Props = {
   users: UserAccount[];
   currentUserId: string;
+  subscriptions: UserSubscription[];
+  subscriptionPlans: SubscriptionPlan[];
 };
 
 const PAGE_SIZE = 10;
@@ -29,6 +47,8 @@ const PAGE_SIZE = 10;
 export default function AdminUserTable({
   users,
   currentUserId,
+  subscriptions,
+  subscriptionPlans,
 }: Props) {
   const supabase = createClient();
 
@@ -38,6 +58,83 @@ export default function AdminUserTable({
   const [userProfiles, setUserProfiles] = useState<UserProfile[]>([]);
   const [profilesLoading, setProfilesLoading] = useState(false);
   const [profilesError, setProfilesError] = useState("");
+  const [currentSubscriptions, setCurrentSubscriptions] = useState(subscriptions);
+  const [savingPlanUserId, setSavingPlanUserId] = useState("");
+  const [subscriptionError, setSubscriptionError] = useState("");
+  const [subscriptionSuccess, setSubscriptionSuccess] = useState("");
+  const [renderTimestamp] = useState(() => Date.now());
+
+  function getUserSubscription(account: UserAccount) {
+    const subscription = currentSubscriptions.find(
+      (item) => item.user_id === account.user_id
+    );
+
+    const isActive =
+      subscription?.status === "active" &&
+      (!subscription.expires_at ||
+        new Date(subscription.expires_at).getTime() > renderTimestamp);
+
+    const plan = isActive
+      ? subscriptionPlans.find((item) => item.id === subscription?.plan_id)
+      : undefined;
+
+    return (
+      plan ??
+      subscriptionPlans.find((item) => item.slug === "free") ?? {
+        id: "",
+        slug: "free",
+        name: "Free",
+        profile_limit: 1,
+        price_monthly: 0,
+      }
+    );
+  }
+  async function handleChangePlan(userId: string, planSlug: string) {
+    setSavingPlanUserId(userId);
+    setSubscriptionError("");
+    setSubscriptionSuccess("");
+
+    try {
+      const { data, error } = await supabase.rpc("taplink_admin_set_user_plan", {
+        target_user_id: userId,
+        target_plan_slug: planSlug,
+      });
+
+      if (error || data !== true) {
+        setSubscriptionError(error?.message || "Unable to update subscription plan.");
+        return;
+      }
+
+      const selectedPlan = subscriptionPlans.find((plan) => plan.slug === planSlug);
+
+      if (!selectedPlan) {
+        setSubscriptionError("Plan updated, but the selected plan could not be found locally. Please refresh the page.");
+        return;
+      }
+
+      setCurrentSubscriptions((previous) => {
+        const updated: UserSubscription = {
+          user_id: userId,
+          plan_id: selectedPlan.id,
+          status: "active",
+          started_at: new Date().toISOString(),
+          expires_at: null,
+        };
+
+        const existing = previous.some((item) => item.user_id === userId);
+
+        return existing
+          ? previous.map((item) => item.user_id === userId ? updated : item)
+          : [...previous, updated];
+      });
+
+      setSubscriptionSuccess("Subscription plan updated successfully.");
+    } catch {
+      setSubscriptionError("Network error. Please check your connection and try again.");
+    } finally {
+      setSavingPlanUserId("");
+    }
+  }
   const dialogRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLElement | null>(null);
   const requestIdRef = useRef(0);
@@ -184,6 +281,17 @@ export default function AdminUserTable({
           </label>
         </div>
 
+        {subscriptionError && (
+          <p role="alert" className="mb-4 rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-xs text-red-300">
+            {subscriptionError}
+          </p>
+        )}
+
+        {subscriptionSuccess && (
+          <p role="status" aria-live="polite" className="mb-4 rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 text-xs text-emerald-300">
+            {subscriptionSuccess}
+          </p>
+        )}
         <div className="overflow-hidden rounded-2xl border border-white/[0.07] bg-[#101a2b]">
           {visibleUsers.length === 0 ? (
             <div className="px-5 py-12 text-center">
@@ -229,6 +337,37 @@ export default function AdminUserTable({
                       View Profiles
                     </button>
                   </div>
+                  <div className="mt-4 border-t border-white/[0.06] pt-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <p className="text-[10px] text-slate-500">Current Plan</p>
+                        <p className="mt-1 text-sm font-semibold text-blue-300">
+                          {getUserSubscription(account).name}
+                        </p>
+                        <p className="mt-1 text-[10px] text-slate-500">
+                          {getUserSubscription(account).profile_limit === null
+                            ? `${account.profile_count} profiles · Unlimited`
+                            : `${account.profile_count} / ${getUserSubscription(account).profile_limit} profiles`}
+                        </p>
+                      </div>
+                      <select
+                        value={getUserSubscription(account).slug}
+                        disabled={savingPlanUserId === account.user_id}
+                        onChange={(event) => handleChangePlan(account.user_id, event.target.value)}
+                        aria-label={`Change subscription plan for ${account.email ?? account.user_id}`}
+                        className="max-w-[150px] rounded-lg border border-blue-400/20 bg-[#101a2b] px-3 py-2 text-xs text-white outline-none focus:border-blue-400/50 disabled:opacity-50"
+                      >
+                        {subscriptionPlans.map((plan) => (
+                          <option key={plan.id} value={plan.slug}>
+                            {plan.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    {savingPlanUserId === account.user_id && (
+                      <p className="mt-2 text-[10px] text-blue-300">Updating plan...</p>
+                    )}
+                  </div>
                   <p className="mt-3 text-[10px] text-slate-500">
                     Joined: {new Date(account.created_at).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })}
                   </p>
@@ -236,12 +375,13 @@ export default function AdminUserTable({
               ))}
             </div>
             <div className="hidden overflow-x-auto md:block">
-              <table className="w-full min-w-[850px] text-left text-sm">
+              <table className="w-full min-w-[1000px] text-left text-sm">
                 <thead className="border-b border-white/[0.07] bg-white/[0.025] text-[10px] uppercase tracking-wider text-slate-500">
                   <tr>
                     <th className="px-5 py-4 font-semibold">User</th>
                     <th className="px-5 py-4 font-semibold">User ID</th>
                     <th className="px-5 py-4 font-semibold">Joined</th>
+                    <th className="px-5 py-4 font-semibold">Subscription</th>
                     <th className="px-5 py-4 text-right font-semibold">Profiles</th>
                     <th className="px-5 py-4 text-right font-semibold">Action</th>
                   </tr>
@@ -270,6 +410,34 @@ export default function AdminUserTable({
                           "en-US",
                           { year: "numeric", month: "short", day: "numeric" }
                         )}
+                      </td>
+                      <td className="px-5 py-5">
+                        <div className="space-y-2">
+                          <p className="text-xs font-semibold text-blue-300">
+                            {getUserSubscription(account).name}
+                          </p>
+                          <p className="text-[10px] text-slate-500">
+                            {getUserSubscription(account).profile_limit === null
+                              ? `${account.profile_count} profiles · Unlimited`
+                              : `${account.profile_count} / ${getUserSubscription(account).profile_limit} profiles`}
+                          </p>
+                          <select
+                            value={getUserSubscription(account).slug}
+                            disabled={savingPlanUserId === account.user_id}
+                            onChange={(event) => handleChangePlan(account.user_id, event.target.value)}
+                            aria-label={`Change subscription plan for ${account.email ?? account.user_id}`}
+                            className="w-full max-w-[150px] rounded-lg border border-blue-400/20 bg-[#080d18] px-2 py-2 text-xs text-white outline-none focus:border-blue-400/50 disabled:opacity-50"
+                          >
+                            {subscriptionPlans.map((plan) => (
+                              <option key={plan.id} value={plan.slug}>
+                                {plan.name}
+                              </option>
+                            ))}
+                          </select>
+                          {savingPlanUserId === account.user_id && (
+                            <p className="text-[10px] text-blue-300">Updating...</p>
+                          )}
+                        </div>
                       </td>
                       <td className="px-5 py-5 text-right font-bold text-blue-300">
                         {account.profile_count}

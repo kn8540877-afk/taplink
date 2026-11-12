@@ -1,8 +1,20 @@
-﻿export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[]
+export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[]
 
 export type Database = {
   public: {
     Tables: {
+      subscription_plans: {
+        Row: { id: string; slug: string; name: string; profile_limit: number | null; price_monthly: number; is_active: boolean; created_at: string }
+        Insert: { id?: string; slug: string; name: string; profile_limit?: number | null; price_monthly?: number; is_active?: boolean; created_at?: string }
+        Update: { id?: string; slug?: string; name?: string; profile_limit?: number | null; price_monthly?: number; is_active?: boolean; created_at?: string }
+        Relationships: []
+      }
+      user_subscriptions: {
+        Row: { user_id: string; plan_id: string; status: string; started_at: string; expires_at: string | null; updated_at: string }
+        Insert: { user_id: string; plan_id: string; status?: string; started_at?: string; expires_at?: string | null; updated_at?: string }
+        Update: { user_id?: string; plan_id?: string; status?: string; started_at?: string; expires_at?: string | null; updated_at?: string }
+        Relationships: []
+      }
       profiles: {
         Row: { id: string; owner_id: string; profile_type: string; slug: string; name: string; role: string | null; bio: string | null; photo_url: string | null; phone: string | null; alternate_phone: string | null; email: string | null; location: string | null; website: string | null; is_published: boolean; created_at: string; updated_at: string }
         Insert: { id?: string; owner_id: string; profile_type?: string; slug: string; name?: string; role?: string | null; bio?: string | null; photo_url?: string | null; phone?: string | null; alternate_phone?: string | null; email?: string | null; location?: string | null; website?: string | null; is_published?: boolean; created_at?: string; updated_at?: string }
@@ -23,7 +35,7 @@ export type Database = {
       }
     }
     Views: Record<string, never>
-    Functions: { is_taplink_admin: { Args: Record<PropertyKey, never>; Returns: boolean }; taplink_admin_overview: { Args: Record<PropertyKey, never>; Returns: { total_users:number; total_profiles: number; published_profiles: number; draft_profiles: number }[] }; taplink_admin_users: { Args: Record<PropertyKey, never>; Returns: { user_id: string;email: string | null; created_at: string; profile_count: number }[] }; taplink_admin_profiles: { Args: Record<PropertyKey, never>; Returns: { profile_id: string; owner_email:string | null; profile_name: string; profile_type: string; slug: string; is_published: boolean; created_at: string }[] }; taplink_admin_set_profile_published: { Args: { target_profile_id: string; publish_status: boolean }; Returns: boolean }; taplink_admin_user_profiles: { Args: { target_user_id: string }; Returns: { profile_id: string; profile_name: string; profile_type: string; slug: string; is_published: boolean; created_at: string }[] }; record_profile_analytics_event: { Args: { p_profile_slug: string; p_event_type: string; p_event_target: string | null; p_visitor_hash: string }; Returns: boolean }; taplink_admin_analytics: { Args: { p_start_date?: string; p_end_date?: string }; Returns: { total_views: number; total_qr_scans: number; total_contact_clicks: number; total_social_clicks: number; total_events: number }[] }; taplink_admin_daily_trends: { Args: { p_start_date: string; p_end_date: string }; Returns: { trend_date: string; total_views: number; total_qr_scans: number; total_contact_clicks: number; total_social_clicks: number }[] }; taplink_admin_top_profiles: { Args: { p_start_date: string; p_end_date: string; p_limit?: number }; Returns: { profile_id: string; profile_name: string; slug: string; profile_type: string; total_views: number; total_qr_scans: number; total_events: number }[] }
+    Functions: { is_taplink_admin: { Args: Record<PropertyKey, never>; Returns: boolean }; taplink_admin_set_user_plan: { Args: { target_user_id: string; target_plan_slug: string }; Returns: boolean }; taplink_admin_overview: { Args: Record<PropertyKey, never>; Returns: { total_users:number; total_profiles: number; published_profiles: number; draft_profiles: number }[] }; taplink_admin_users: { Args: Record<PropertyKey, never>; Returns: { user_id: string;email: string | null; created_at: string; profile_count: number }[] }; taplink_admin_profiles: { Args: Record<PropertyKey, never>; Returns: { profile_id: string; owner_email:string | null; profile_name: string; profile_type: string; slug: string; is_published: boolean; created_at: string }[] }; taplink_admin_set_profile_published: { Args: { target_profile_id: string; publish_status: boolean }; Returns: boolean }; taplink_admin_user_profiles: { Args: { target_user_id: string }; Returns: { profile_id: string; profile_name: string; profile_type: string; slug: string; is_published: boolean; created_at: string }[] }; record_profile_analytics_event: { Args: { p_profile_slug: string; p_event_type: string; p_event_target: string | null; p_visitor_hash: string }; Returns: boolean }; taplink_admin_analytics: { Args: { p_start_date?: string; p_end_date?: string }; Returns: { total_views: number; total_qr_scans: number; total_contact_clicks: number; total_social_clicks: number; total_events: number }[] }; taplink_admin_daily_trends: { Args: { p_start_date: string; p_end_date: string }; Returns: { trend_date: string; total_views: number; total_qr_scans: number; total_contact_clicks: number; total_social_clicks: number }[] }; taplink_admin_top_profiles: { Args: { p_start_date: string; p_end_date: string; p_limit?: number }; Returns: { profile_id: string; profile_name: string; slug: string; profile_type: string; total_views: number; total_qr_scans: number; total_events: number }[] }
     }
     Enums: Record<string, never>
     CompositeTypes: Record<string, never>

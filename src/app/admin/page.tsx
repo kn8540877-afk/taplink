@@ -1,4 +1,4 @@
-﻿import { redirect } from "next/navigation";
+import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import Link from "next/link";
 import { createClient } from "@/utils/supabase/server";
@@ -45,6 +45,8 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
     { data: analytics, error: analyticsError },
     { data: dailyTrends, error: dailyTrendsError },
     { data: topProfiles, error: topProfilesError },
+    { data: subscriptions, error: subscriptionsError },
+    { data: subscriptionPlans, error: subscriptionPlansError },
   ] = await Promise.all([
     supabase.rpc("taplink_admin_overview"),
     supabase.rpc("taplink_admin_users"),
@@ -52,6 +54,8 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
     supabase.rpc("taplink_admin_analytics", { p_start_date: startDate.toISOString(), p_end_date: endDate.toISOString() }),
     supabase.rpc("taplink_admin_daily_trends", { p_start_date: startDate.toISOString(), p_end_date: endDate.toISOString() }),
     supabase.rpc("taplink_admin_top_profiles", { p_start_date: startDate.toISOString(), p_end_date: endDate.toISOString(), p_limit: 10 }),
+    supabase.from("user_subscriptions").select("user_id, plan_id, status, started_at, expires_at"),
+    supabase.from("subscription_plans").select("id, slug, name, profile_limit, price_monthly").eq("is_active", true),
   ]);
 
   const stats = overview?.[0];
@@ -269,14 +273,14 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
               </div>
             )}
 
-            {usersError ? (
+            {usersError || subscriptionsError || subscriptionPlansError ? (
               <section id="users" className="mt-12 scroll-mt-28">
                 <p role="alert" className="rounded-xl border border-red-500/20 bg-red-500/10 p-5 text-sm text-red-300">
-                  Unable to load user accounts. Please try again.
+                  Unable to load user accounts or subscription data. Please try again.
                 </p>
               </section>
             ) : (
-              <AdminUserTable users={users ?? []} currentUserId={user.id} />
+              <AdminUserTable users={users ?? []} currentUserId={user.id} subscriptions={subscriptions ?? []} subscriptionPlans={subscriptionPlans ?? []} />
             )}
 
             {profilesError ? (
