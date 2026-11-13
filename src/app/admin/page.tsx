@@ -8,6 +8,7 @@ import AdminUserTable from "./components/AdminUserTable";
 import AdminAnalyticsSummary from "./components/AdminAnalyticsSummary";
 import AdminAnalyticsChart from "./components/AdminAnalyticsChart";
 import AdminTopProfiles from "./components/AdminTopProfiles";
+import AdminSubscriptionHistory from "./components/AdminSubscriptionHistory";
 
 export const instant = false;
 
@@ -47,6 +48,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
     { data: topProfiles, error: topProfilesError },
     { data: subscriptions, error: subscriptionsError },
     { data: subscriptionPlans, error: subscriptionPlansError },
+    { data: subscriptionHistory, error: subscriptionHistoryError },
   ] = await Promise.all([
     supabase.rpc("taplink_admin_overview"),
     supabase.rpc("taplink_admin_users"),
@@ -56,6 +58,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
     supabase.rpc("taplink_admin_top_profiles", { p_start_date: startDate.toISOString(), p_end_date: endDate.toISOString(), p_limit: 10 }),
     supabase.from("user_subscriptions").select("user_id, plan_id, status, started_at, expires_at"),
     supabase.from("subscription_plans").select("id, slug, name, profile_limit, price_monthly").eq("is_active", true),
+    supabase.from("subscription_history").select("id, user_id, old_plan_id, new_plan_id, changed_by, old_status, new_status, old_expires_at, new_expires_at, created_at").order("created_at", { ascending: false }).limit(100),
   ]);
 
   const stats = overview?.[0];
@@ -283,6 +286,19 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
               <AdminUserTable users={users ?? []} currentUserId={user.id} subscriptions={subscriptions ?? []} subscriptionPlans={subscriptionPlans ?? []} />
             )}
 
+            {subscriptionHistoryError ? (
+              <section id="subscription-history" className="mt-12 scroll-mt-28">
+                <p role="alert" className="rounded-xl border border-red-500/20 bg-red-500/10 p-5 text-sm text-red-300">
+                  Unable to load subscription history. Please try again.
+                </p>
+              </section>
+            ) : (
+              <AdminSubscriptionHistory
+                history={subscriptionHistory ?? []}
+                users={users ?? []}
+                subscriptionPlans={subscriptionPlans ?? []}
+              />
+            )}
             {profilesError ? (
               <section id="profiles" className="mt-12 scroll-mt-28">
                 <p role="alert" className="rounded-xl border border-red-500/20 bg-red-500/10 p-5 text-sm text-red-300">
@@ -303,8 +319,3 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
     </main>
   );
 }
-
-
-
-
-

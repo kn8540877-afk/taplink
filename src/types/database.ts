@@ -9,6 +9,12 @@ export type Database = {
         Update: { id?: string; slug?: string; name?: string; profile_limit?: number | null; price_monthly?: number; is_active?: boolean; created_at?: string }
         Relationships: []
       }
+      subscription_history: {
+        Row: { id: string; user_id: string | null; old_plan_id: string | null; new_plan_id: string; changed_by: string | null; old_status: string | null; new_status: string; old_expires_at: string | null; new_expires_at: string | null; created_at: string }
+        Insert: { id?: string; user_id?: string | null; old_plan_id?: string | null; new_plan_id: string; changed_by?: string | null; old_status?: string | null; new_status: string; old_expires_at?: string | null; new_expires_at?: string | null; created_at?: string }
+        Update: { id?: string; user_id?: string | null; old_plan_id?: string | null; new_plan_id?: string; changed_by?: string | null; old_status?: string | null; new_status?: string; old_expires_at?: string | null; new_expires_at?: string | null; created_at?: string }
+        Relationships: []
+      }
       user_subscriptions: {
         Row: { user_id: string; plan_id: string; status: string; started_at: string; expires_at: string | null; updated_at: string }
         Insert: { user_id: string; plan_id: string; status?: string; started_at?: string; expires_at?: string | null; updated_at?: string }
@@ -41,8 +47,3 @@ export type Database = {
     CompositeTypes: Record<string, never>
   }
 }
-
-
-
-
-

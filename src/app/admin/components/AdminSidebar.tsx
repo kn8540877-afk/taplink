@@ -7,6 +7,7 @@ const navigation = [
   { href: "#overview", id: "overview", number: "01", label: "Overview" },
   { href: "#users", id: "users", number: "02", label: "User Management" },
   { href: "#profiles", id: "profiles", number: "03", label: "Profile Management" },
+  { href: "#subscription-history", id: "subscription-history", number: "04", label: "Subscription History" },
 ];
 
 export default function AdminSidebar() {
