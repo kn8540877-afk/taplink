@@ -54,7 +54,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
   const subscriptionIsActive =
     subscription?.status === "active" &&
     (!subscription.expires_at ||
-      new Date(subscription.expires_at).getTime() > Date.now());
+      new Date(subscription.expires_at).getTime() > now.getTime());
 
   const currentPlan = subscriptionIsActive && subscriptionPlan
     ? subscriptionPlan
