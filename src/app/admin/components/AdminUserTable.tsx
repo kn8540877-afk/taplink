@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
 
 type UserAccount = {
@@ -51,6 +52,7 @@ export default function AdminUserTable({
   subscriptionPlans,
 }: Props) {
   const supabase = createClient();
+  const router = useRouter();
 
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
@@ -129,6 +131,7 @@ export default function AdminUserTable({
       });
 
       setSubscriptionSuccess("Subscription plan updated successfully.");
+      router.refresh();
     } catch {
       setSubscriptionError("Network error. Please check your connection and try again.");
     } finally {
