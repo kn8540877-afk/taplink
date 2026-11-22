@@ -45,3 +45,5 @@ next-env.d.ts
 *.backup-*
 
 supabase/.temp/
+
+supabase/remote_schema_reference.sql
